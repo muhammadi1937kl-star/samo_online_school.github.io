@@ -100,65 +100,42 @@ function renderProductsBasket(arr) {
     });
 }
 
-// Идентификатор вашего чата в Telegram
-const chatId = '5252214082';
-// Ваш токен бота в Telegram
-const botToken = '7059960789:AAG23wRmYE9fWT3dUG9WjVOh_ffdXN6ebmc';
-setTimeout(() => {
-    console.log(goodTitle);
-    console.log(goodSumma);
-    console.log(goodSumma1);
-    console.log(goodSumma2);
-}, 500);
-
+// URL твоего Google Apps Script
+const scriptURL = "https://script.google.com/macros/s/AKfycbxYBPqDO_SEfwBeCNy5NmfaEktA6KEcrOidL89lgBJrRSdVZSrdozTz14MTf4Np5M3i/exec";
 
 document.querySelector('#applicationForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    // Получение данных формы
+
     const formData = new FormData(this);
     const fullName = formData.get('fullName');
     const phoneNumber = formData.get('phoneNumber');
-    const fileInput = formData.get('fileInput');
     const adress = formData.get('adress');
     const comment = formData.get('commentari');
 
-    
-    // Создание сообщения
-    const message = `ФИО: ${fullName}\nНомер телефона: ${phoneNumber}\nАдрес доставки: ${adress}\nКниги: ${goodTitle}\nСумма заказа:\n${goodSumma}$\n${goodSumma1}₽\n${goodSumma2}смн\nКомментарий: ${comment}`;
+    const data = {
+        fullName,
+        phoneNumber,
+        adress,
+        goodTitle,
+        goodSumma,
+        goodSumma1,
+        goodSumma2,
+        comment
+    };
 
-    // Отправка сообщения в Telegram
-    fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    fetch(scriptURL, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text: message
-        })
-    }).then(response => response.json())
-      .then(data => {
-          console.log('Message sent: ', data);
-          // Удаление данных из корзины
-
-
-
-
-      })
-      .catch(error => console.error('Error sending message: ', error));
-
-    if (fileInput) {
-        const fileFormData = new FormData();
-        fileFormData.append('chat_id', chatId);
-        fileFormData.append('document', fileInput);
-
-        fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
-            method: 'POST',
-            body: fileFormData
-        }).then(response => response.json())
-          .then(data => alert("Ваш заказ оформлен, скоро свяжемся с вами! С уважением, САМО!"))
-          .then(data => window.location.href = 'index.html')
-          .catch(error => console.error('Error sending document: ', error));
-    }
+        body: JSON.stringify(data)
+    })
+    .then(res => res.text())
+    .then(res => {
+        alert("Ваша заявка отправлено! Скоро свяжемся с вами! С уважением, САМО!");
+        window.location.href = 'index.html';
+    })
+    .catch(err => console.error('Ошибка сохранения: ', err));
 });
+
 getProducts();
+
+
+get
