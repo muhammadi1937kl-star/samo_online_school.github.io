@@ -1,37 +1,356 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>КЕЙС КНИГ САИДМУРОД ДАВЛАТОВ</title>
-    <link rel="stylesheet" href="./style/style.css">
-    <script src="./js/index.js" type="module" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Админка — Давлатов Академия</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12121a;--panel:#1a1a24;--panel2:#212130;--line:#2c2c3e;--text:#ecebf2;--mute:#8c8ba1;--gold:#C9A84C;--green:#2ECC71;--yellow:#F1C40F;--red:#E74C3C;--r:12px}
+*{box-sizing:border-box;margin:0}
+body{font-family:Manrope,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hidden{display:none!important}
+
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:28px;width:100%;max-width:420px}
+.card h1{font-size:32px;color:var(--gold);margin-bottom:4px}
+.card p{color:var(--mute);margin-bottom:20px}
+label{display:block;font-size:12px;color:var(--mute);margin:14px 0 6px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);outline:none}
+.btn{background:var(--gold);color:#1a1405;border:0;border-radius:8px;padding:10px 18px;font-weight:700}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn.danger{background:transparent;color:var(--red);border:1px solid #5a2a2a}
+.btn.sm{padding:6px 10px;font-size:12px}
+.err{color:var(--red);margin-top:12px;min-height:18px}
+
+/* layout */
+#app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.brand{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);padding:0 10px 4px;font-weight:700;line-height:1.1}
+.brand small{display:block;font-family:Manrope;font-size:11px;color:var(--mute);font-weight:500;margin-top:4px}
+nav{margin-top:26px;display:flex;flex-direction:column;gap:4px}
+nav button{background:none;border:0;text-align:left;padding:10px 12px;border-radius:8px;color:var(--mute);font-weight:600}
+nav button:hover{background:var(--panel2);color:var(--text)}
+nav button.on{background:var(--panel2);color:var(--gold);box-shadow:inset 3px 0 var(--gold)}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+main{padding:28px 32px;max-width:1200px;width:100%}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.top h2{font-size:32px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tools input,.tools select{width:auto;min-width:160px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.stat b{display:block;font-size:30px;font-family:'Cormorant Garamond',serif}
+.stat span{color:var(--mute);font-size:12px}
+.stat.gold b{color:var(--gold)}.stat.g b{color:var(--green)}.stat.y b{color:var(--yellow)}.stat.r b{color:var(--red)}
+
+/* table */
+.tbl{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th{text-align:left;color:var(--mute);font-weight:600;font-size:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#1e1e2b}
+.sub{color:var(--mute);font-size:12px}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.badge.active{background:#0f3d2a;color:var(--green)}
+.badge.pending{background:#3d3200;color:var(--yellow)}
+.badge.denied{background:#3d0f0f;color:var(--red)}
+.chip{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:2px 3px 2px 0;font-size:12px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 0 3px #2ecc7133}
+.acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.empty{padding:40px;text-align:center;color:var(--mute)}
+.lesson-h{margin:22px 0 10px;font-size:24px;color:var(--gold)}
+
+/* modal */
+.modal{position:fixed;inset:0;background:#000a;display:grid;place-items:center;padding:16px;z-index:10;overflow-y:auto}
+.modal .card{max-width:520px;margin:auto}
+.modal h3{font-size:26px;margin-bottom:6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lessons{display:flex;flex-wrap:wrap;gap:8px}
+.lessons label{margin:0;display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;color:var(--text);font-size:13px}
+.lessons input{width:auto}
+.lessons label:has(input:checked){border-color:var(--gold);color:var(--gold)}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--gold);padding:10px 18px;border-radius:99px;z-index:20;transition:opacity .2s}
+.bar{height:6px;background:var(--bg);border-radius:9px;overflow:hidden;min-width:100px}
+.bar i{display:block;height:100%;background:var(--gold)}
+
+@media(max-width:820px){
+ #app{grid-template-columns:1fr}
+ aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px}
+ nav{flex-direction:row;margin:0;flex:1;overflow-x:auto}
+ .side-foot{flex-direction:row;margin:0}
+ .brand small{display:none}
+ main{padding:18px 14px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
-<body style="background-color:aliceblue;">
+<body>
 
-    <div class="wrapper">
-        <h1 style="font-size: 25px;" >СПИСОК КНИГ</h1>
-        <div class="cards"></div>
-        <button class="show-cards none">Показать еще</button>
-        
-        <a href="/basket.html" class="basket">
-            <div class="basket__inner">
-                <svg width="38" height="38" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M.75-.02a.75.75 0 100 1.5l.408-.006 1.606 1.281 1.839 6.881L4.237 12a2 2 0 102.188 2.722l5.705.028a2 2 0 100-1.5l-5.705-.028a2.007 2.007 0 00-.722-.898l.438-2.632 7.933.027 1.91-7.715H4.227L1.683-.026 1.68-.02v-.005L.75-.02z" fill="#000"></path>
-                </svg>
-                <span class="basket__count">0</span>
-            </div>
-        </a>
-        <a class="home" href="/">
-            <svg width="45" height="45" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M7.98 1.984l7 6h-2.003v6H9.96V10.97H5.997v3.016H2.982v-6H.979l7-6z" fill="#000"></path>
-            </svg>
-        </a>
+<!-- ВХОД -->
+<div id="login">
+  <form class="card" onsubmit="doLogin(event)">
+    <h1>Давлатов Академия</h1>
+    <p>Вход в панель управления</p>
+    <label for="lUrl">Адрес Web App (Apps Script)</label>
+    <input id="lUrl" placeholder="https://script.google.com/macros/s/.../exec" required>
+    <label for="lKey">Секретный ключ администратора</label>
+    <input id="lKey" type="password" placeholder="ADMIN_KEY из скрипта" required>
+    <div class="err" id="lErr"></div>
+    <button class="btn" style="width:100%;margin-top:6px">Войти</button>
+  </form>
+</div>
+
+<!-- ПРИЛОЖЕНИЕ -->
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand">Давлатов Академия<small>Панель администратора</small></div>
+    <nav>
+      <button data-tab="overview" class="on">Обзор</button>
+      <button data-tab="users">Ученики</button>
+      <button data-tab="videos">Уроки и видео</button>
+      <button data-tab="logs">Журнал</button>
+    </nav>
+    <div class="side-foot">
+      <button class="btn ghost sm" id="syncBtn">Синхронизировать Диск</button>
+      <button class="btn ghost sm" onclick="logout()">Выйти</button>
     </div>
+  </aside>
+  <main id="view"></main>
+</div>
 
-    <footer style="font-family: Arial, Helvetica, sans-serif; text-align: center; padding: 10px 0;">
-        SamoBooks © 2024. Все права защищены. ИП Аминов С.
-    </footer>
+<div id="modal" class="modal hidden"></div>
+<div id="toast" class="hidden"></div>
+
+<script>
+const S = { url:'', key:'', users:[], videos:[], logs:[], tab:'overview', q:'', st:'all' };
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- API ---------- */
+async function api(action, params = {}) {
+  const u = new URL(S.url);
+  u.searchParams.set('action', action);
+  u.searchParams.set('key', S.key);
+  for (const k in params) if (params[k] !== undefined && params[k] !== null) u.searchParams.set(k, params[k]);
+  const r = await fetch(u.toString());
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.error === 'bad key' ? 'Неверный ключ администратора' : (d.error || 'Ошибка сервера'));
+  return d;
+}
+function toast(t) {
+  const el = $('#toast'); el.textContent = t; el.classList.remove('hidden');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.add('hidden'), 2600);
+}
+
+/* ---------- вход ---------- */
+async function doLogin(e) {
+  e.preventDefault();
+  S.url = $('#lUrl').value.trim(); S.key = $('#lKey').value;
+  $('#lErr').textContent = '';
+  try {
+    await api('adminPing');
+    sessionStorage.setItem('adm', JSON.stringify({ url: S.url, key: S.key }));
+    localStorage.setItem('admUrl', S.url);
+    start();
+  } catch (err) {
+    $('#lErr').textContent = err.message === 'Failed to fetch'
+      ? 'Не удалось подключиться. Проверьте адрес и что доступ Web App — «Anyone».' : err.message;
+  }
+}
+function logout() { sessionStorage.removeItem('adm'); location.reload(); }
+
+async function start() {
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  await reload();
+}
+async function reload() {
+  $('#view').innerHTML = '<div class="empty">Загрузка…</div>';
+  try {
+    const [u, v] = await Promise.all([api('adminListUsers'), api('adminListVideos')]);
+    S.users = u.users; S.videos = v.videos;
+    render();
+  } catch (err) { $('#view').innerHTML = '<div class="empty">' + esc(err.message) + '</div>'; }
+}
+
+/* ---------- утилиты ---------- */
+const lessonIds = () => [...new Set(S.videos.map(v => v.lessonId))].filter(Boolean).sort((a, b) => a - b);
+const isOnline = u => u.lastSeen && (Date.now() - new Date(u.lastSeen).getTime()) < 3 * 60 * 1000;
+const stLabel = { active: 'Активен', pending: 'Ожидает', denied: 'Закрыт' };
+const badge = s => `<span class="badge ${esc(s)}">${stLabel[s] || esc(s || '—')}</span>`;
+const chips = a => a.length ? a.map(n => `<span class="chip">Урок ${n}</span>`).join('') : '<span class="sub">нет</span>';
+
+/* ---------- отрисовка ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = async () => {
+  S.tab = b.dataset.tab;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  if (S.tab === 'logs') { $('#view').innerHTML = '<div class="empty">Загрузка…</div>'; S.logs = (await api('adminLogs')).logs; }
+  render();
+});
+function render() { ({ overview: vOverview, users: vUsers, videos: vVideos, logs: vLogs })[S.tab](); }
+
+function vOverview() {
+  const c = s => S.users.filter(u => u.status === s).length;
+  const online = S.users.filter(isOnline);
+  const ids = lessonIds();
+  const max = Math.max(1, ...ids.map(id => S.users.filter(u => u.status === 'active' && u.lessons.includes(id)).length));
+  $('#view').innerHTML = `
+  <div class="top"><h2>Обзор</h2><button class="btn ghost" onclick="reload()">Обновить</button></div>
+  <div class="stats">
+    <div class="stat gold"><b>${S.users.length}</b><span>Всего учеников</span></div>
+    <div class="stat g"><b>${c('active')}</b><span>Активных</span></div>
+    <div class="stat y"><b>${c('pending')}</b><span>Ждут одобрения</span></div>
+    <div class="stat r"><b>${c('denied')}</b><span>Закрыт доступ</span></div>
+    <div class="stat"><b><span class="dot"></span>${online.length}</b><span>Смотрят сейчас</span></div>
+  </div>
+  ${c('pending') ? `<div class="tbl" style="margin-bottom:22px"><table><thead><tr><th>Новые заявки</th><th></th></tr></thead><tbody>
+    ${S.users.filter(u => u.status === 'pending').map(u => `<tr><td>${esc(u.name || u.email || u.login)}<div class="sub">${esc(u.email)}</div></td>
+    <td><div class="acts"><button class="btn sm" onclick="editUser(${u.row})">Открыть доступ</button></div></td></tr>`).join('')}
+  </tbody></table></div>` : ''}
+  <div class="tbl"><table><thead><tr><th>Урок</th><th>Частей</th><th>Учеников с доступом</th><th></th></tr></thead><tbody>
+  ${ids.length ? ids.map(id => { const n = S.users.filter(u => u.status === 'active' && u.lessons.includes(id)).length;
+    return `<tr><td>Урок ${id}</td><td>${S.videos.filter(v => v.lessonId === id).length}</td><td>${n}</td>
+    <td><div class="bar"><i style="width:${n / max * 100}%"></i></div></td></tr>`; }).join('')
+    : '<tr><td colspan="4" class="empty">Уроков пока нет. Добавьте видео на вкладке «Уроки и видео».</td></tr>'}
+  </tbody></table></div>`;
+}
+
+function vUsers() {
+  const q = S.q.toLowerCase();
+  const list = S.users.filter(u => (S.st === 'all' || u.status === S.st) &&
+    (!q || [u.name, u.email, u.login, u.comment].join(' ').toLowerCase().includes(q)));
+  $('#view').innerHTML = `
+  <div class="top"><h2>Ученики</h2><div class="tools">
+    <input id="q" placeholder="Поиск по имени или почте" value="${esc(S.q)}">
+    <select id="st"><option value="all">Все статусы</option><option value="active">Активные</option><option value="pending">Ожидают</option><option value="denied">Закрытые</option></select>
+    <button class="btn" onclick="editUser(0)">Добавить ученика</button></div></div>
+  <div class="tbl"><table><thead><tr><th>Ученик</th><th>Статус</th><th>Доступные уроки</th><th>Последний вход</th><th></th></tr></thead><tbody>
+  ${list.length ? list.map(u => `<tr>
+    <td>${isOnline(u) ? '<span class="dot" title="Смотрит сейчас"></span>' : ''}<b>${esc(u.name || '—')}</b><div class="sub">${esc(u.email || u.login)}</div>${u.comment ? `<div class="sub">${esc(u.comment)}</div>` : ''}</td>
+    <td>${badge(u.status)}</td><td>${chips(u.lessons)}</td><td class="sub">${esc(u.lastLogin || '—')}</td>
+    <td><div class="acts">
+      ${u.status === 'pending' ? `<button class="btn sm" onclick="quick(${u.row},'active')">Одобрить</button>` : ''}
+      ${u.status === 'active' ? `<button class="btn ghost sm" onclick="quick(${u.row},'denied')">Закрыть</button>` : ''}
+      ${u.status === 'denied' ? `<button class="btn ghost sm" onclick="quick(${u.row},'active')">Открыть</button>` : ''}
+      <button class="btn ghost sm" onclick="editUser(${u.row})">Изменить</button>
+      <button class="btn danger sm" onclick="delUser(${u.row})">Удалить</button></div></td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty">Никого не найдено</td></tr>'}
+  </tbody></table></div>`;
+  $('#st').value = S.st;
+  $('#q').oninput = e => { S.q = e.target.value; const p = e.target.selectionStart; vUsers(); const n = $('#q'); n.focus(); n.setSelectionRange(p, p); };
+  $('#st').onchange = e => { S.st = e.target.value; vUsers(); };
+}
+
+function vVideos() {
+  const ids = lessonIds();
+  $('#view').innerHTML = `
+  <div class="top"><h2>Уроки и видео</h2><button class="btn" onclick="editVideo(0)">Добавить видео</button></div>
+  ${ids.length ? ids.map(id => `<h3 class="lesson-h">Урок ${id}</h3><div class="tbl"><table><thead><tr><th>Часть</th><th>Название</th><th>Drive File ID</th><th></th></tr></thead><tbody>
+    ${S.videos.filter(v => v.lessonId === id).sort((a, b) => a.part - b.part).map(v => `<tr>
+      <td>${v.part}</td><td>${esc(v.title || '—')}</td><td class="sub">${esc(v.fileId)}</td>
+      <td><div class="acts"><button class="btn ghost sm" onclick="editVideo(${v.row})">Изменить</button>
+      <button class="btn danger sm" onclick="delVideo(${v.row})">Удалить</button></div></td></tr>`).join('')}
+    </tbody></table></div>`).join('') : '<div class="tbl"><div class="empty">Видео пока нет. Нажмите «Добавить видео».</div></div>'}`;
+}
+
+function vLogs() {
+  $('#view').innerHTML = `<div class="top"><h2>Журнал</h2><span class="sub">Последние 300 записей</span></div>
+  <div class="tbl"><table><thead><tr><th>Время</th><th>Кто</th><th>Действие</th></tr></thead><tbody>
+  ${S.logs.length ? S.logs.map(l => `<tr><td class="sub" style="white-space:nowrap">${esc(l.time)}</td><td>${esc(l.who)}</td><td>${esc(l.action)}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="empty">Записей нет</td></tr>'}</tbody></table></div>`;
+}
+
+/* ---------- модальные окна ---------- */
+function openModal(html) { const m = $('#modal'); m.innerHTML = html; m.classList.remove('hidden'); m.onclick = e => { if (e.target === m) closeModal(); }; }
+function closeModal() { $('#modal').classList.add('hidden'); }
+async function run(fn, ok) {
+  try { await fn(); closeModal(); toast(ok); await reload(); }
+  catch (err) { toast('Ошибка: ' + err.message); }
+}
+
+function editUser(row) {
+  const u = S.users.find(x => x.row === row) || { row: 0, status: 'active', lessons: [], name: '', email: '', login: '', comment: '' };
+  const ids = [...new Set([...lessonIds(), ...u.lessons])].sort((a, b) => a - b);
+  openModal(`<form class="card" onsubmit="saveUser(event, ${u.row})">
+    <h3>${u.row ? 'Изменить ученика' : 'Новый ученик'}</h3>
+    <label>Имя</label><input id="fName" value="${esc(u.name)}">
+    <label>Google-почта (для входа и доступа к видео)</label><input id="fEmail" type="email" value="${esc(u.email)}">
+    <div class="row2"><div><label>Логин (необязательно)</label><input id="fLogin" value="${esc(u.login)}"></div>
+    <div><label>Пароль (необязательно)</label><input id="fPass" placeholder="${u.row ? 'не менять' : ''}"></div></div>
+    <label>Статус</label><select id="fStatus">
+      ${['active', 'pending', 'denied'].map(s => `<option value="${s}" ${u.status === s ? 'selected' : ''}>${stLabel[s]}</option>`).join('')}</select>
+    <label>Доступные уроки</label><div class="lessons">
+      ${ids.length ? ids.map(id => `<label><input type="checkbox" value="${id}" ${u.lessons.includes(id) ? 'checked' : ''}>Урок ${id}</label>`).join('') : '<span class="sub">Сначала добавьте видео</span>'}</div>
+    <label>Комментарий</label><textarea id="fComment" rows="2">${esc(u.comment)}</textarea>
+    <div class="foot"><button type="button" class="btn ghost" onclick="closeModal()">Отмена</button><button class="btn">Сохранить</button></div>
+  </form>`);
+}
+function saveUser(e, row) {
+  e.preventDefault();
+  const lessons = [...document.querySelectorAll('.lessons input:checked')].map(i => i.value).join(',');
+  const email = $('#fEmail').value.trim(), login = $('#fLogin').value.trim();
+  if (!email && !login) return toast('Укажите почту или логин');
+  run(() => api('adminSaveUser', { row, name: $('#fName').value.trim(), email, login, pass: $('#fPass').value.trim(),
+    status: $('#fStatus').value, lessons, comment: $('#fComment').value.trim() }), 'Сохранено, доступ на Диске обновлён');
+}
+function quick(row, status) {
+  const u = S.users.find(x => x.row === row);
+  run(() => api('adminSaveUser', { row, name: u.name, email: u.email, login: u.login, status,
+    lessons: u.lessons.join(','), comment: u.comment }), status === 'active' ? 'Доступ открыт' : 'Доступ закрыт');
+}
+function delUser(row) {
+  const u = S.users.find(x => x.row === row);
+  openModal(`<div class="card"><h3>Удалить ученика?</h3><p>${esc(u.name || u.email)} потеряет доступ ко всем видео, строка будет удалена из таблицы.</p>
+    <div class="foot"><button class="btn ghost" onclick="closeModal()">Отмена</button><button class="btn danger" id="yes">Удалить</button></div></div>`);
+  $('#yes').onclick = () => run(() => api('adminDeleteUser', { row, email: u.email }), 'Ученик удалён');
+}
+
+function editVideo(row) {
+  const v = S.videos.find(x => x.row === row) || { row: 0, lessonId: '', part: '', fileId: '', title: '' };
+  openModal(`<form class="card" onsubmit="saveVideo(event, ${v.row})">
+    <h3>${v.row ? 'Изменить видео' : 'Новое видео'}</h3>
+    <div class="row2"><div><label>Номер урока</label><input id="vLesson" type="number" min="1" required value="${v.lessonId}"></div>
+    <div><label>Номер части</label><input id="vPart" type="number" min="1" required value="${v.part}"></div></div>
+    <label>Drive File ID</label><input id="vFile" required value="${esc(v.fileId)}" placeholder="из ссылки drive.google.com/file/d/ID/view">
+    <label>Название (необязательно)</label><input id="vTitle" value="${esc(v.title)}">
+    <div class="foot"><button type="button" class="btn ghost" onclick="closeModal()">Отмена</button><button class="btn">Сохранить</button></div>
+  </form>`);
+}
+function saveVideo(e, row) {
+  e.preventDefault();
+  let f = $('#vFile').value.trim(); const m = f.match(/\/d\/([\w-]+)/); if (m) f = m[1];
+  run(() => api('adminSaveVideo', { row, lessonId: $('#vLesson').value, part: $('#vPart').value, fileId: f, title: $('#vTitle').value.trim() }),
+    'Видео сохранено, права обновлены');
+}
+function delVideo(row) {
+  openModal(`<div class="card"><h3>Удалить видео?</h3><p>Запись будет удалена из таблицы. Сам файл на Google Диске останется.</p>
+    <div class="foot"><button class="btn ghost" onclick="closeModal()">Отмена</button><button class="btn danger" id="yes">Удалить</button></div></div>`);
+  $('#yes').onclick = () => run(() => api('adminDeleteVideo', { row }), 'Видео удалено');
+}
+
+$('#syncBtn').onclick = async () => {
+  const b = $('#syncBtn'); b.disabled = true; b.textContent = 'Синхронизация…';
+  try { await api('adminSyncAll'); toast('Права на Диске синхронизированы'); } catch (e) { toast('Ошибка: ' + e.message); }
+  b.disabled = false; b.textContent = 'Синхронизировать Диск';
+};
+
+/* ---------- старт ---------- */
+$('#lUrl').value = localStorage.getItem('admUrl') || '';
+try { const s = JSON.parse(sessionStorage.getItem('adm')); if (s) { S.url = s.url; S.key = s.key; start(); } } catch (e) {}
+</script>
 </body>
 </html>
