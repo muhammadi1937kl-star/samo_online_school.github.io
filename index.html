@@ -15,6 +15,17 @@ h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:700}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button{position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,filter .15s,background .15s,border-color .15s,color .15s,box-shadow .15s}
+button:hover:not(:disabled){transform:translateY(-1px)}
+button:active:not(:disabled){transform:translateY(0) scale(.96)}
+nav button:hover:not(:disabled),.met:hover:not(:disabled),.seg button:hover:not(:disabled){transform:none}
+.btn:hover:not(:disabled){box-shadow:0 4px 14px #c9a84c33}
+button:disabled{opacity:.6;cursor:wait}
+.ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.3;transform:scale(0);animation:rip .55s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(1);opacity:0}}
+.modal{animation:fadein .18s ease}.modal .card{animation:pop .22s ease}
+@keyframes fadein{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}}
 .hidden{display:none!important}
 
 /* login */
@@ -88,7 +99,30 @@ tbody tr:hover{background:#1e1e2b}
 .bar{height:6px;background:var(--bg);border-radius:9px;overflow:hidden;min-width:100px}
 .bar i{display:block;height:100%;background:var(--gold)}
 
-@media(max-width:820px){
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:22px}
+.panel h3{font-size:22px;margin-bottom:14px}
+.cols{display:flex;align-items:flex-end;gap:10px;height:200px}
+.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;min-width:0}
+.col i{display:block;width:100%;max-width:48px;background:linear-gradient(var(--gold),#8a7230);border-radius:6px 6px 0 0;min-height:3px}
+.col b{font-size:12px}.col span{font-size:11px;color:var(--mute);white-space:nowrap}
+.mets{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.met{background:none;border:0;border-right:1px solid var(--line);border-bottom:3px solid transparent;padding:14px 16px;text-align:left}
+.met:last-child{border-right:0}
+.met.on{background:var(--panel2);border-bottom-color:var(--gold)}
+.met b{display:block;font-size:30px;font-family:'Cormorant Garamond',serif}
+.met span{font-size:12px;color:var(--mute)}
+.up{color:var(--green)}.dn{color:var(--red)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--panel2);border:1px solid var(--line);padding:6px 10px;border-radius:8px;font-size:12px;transform:translate(-50%,-120%);white-space:nowrap}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.rank .it{display:flex;align-items:center;gap:10px;margin:12px 0}
+.rank .it span{width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .it .bar{flex:1}
+.seg button{background:var(--bg);border:1px solid var(--line);color:var(--mute);padding:7px 12px}
+.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+.seg button.on{color:var(--gold);border-color:var(--gold)}
+@media(max-width:820px){.g2{grid-template-columns:1fr}.met b{font-size:22px}
+
  #app{grid-template-columns:1fr}
  aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px}
  nav{flex-direction:row;margin:0;flex:1;overflow-x:auto}
@@ -96,7 +130,7 @@ tbody tr:hover{background:#1e1e2b}
  .brand small{display:none}
  main{padding:18px 14px}
 }
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}.ripple,.modal,.modal .card{animation:none!important}}
 </style>
 </head>
 <body>
@@ -138,6 +172,8 @@ tbody tr:hover{background:#1e1e2b}
 
 <script>
 const S = { url:'', key:'', users:[], videos:[], logs:[], tab:'overview', q:'', st:'all' };
+const MANAGERS = ['Ходжаев Фаррухджон', 'Нисоев Ансор', 'Бобоева Гулчехра', 'Каххоров Саидчон', 'Зухробуча', 'Рахматчон', 'Дилангез', 'Ахмаджон', 'Мунир'];
+const fmtDate = d => /^\d{4}-\d{2}-\d{2}/.test(d || '') ? d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(0, 4) : '—';
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -182,7 +218,7 @@ async function reload() {
   $('#view').innerHTML = '<div class="empty">Загрузка…</div>';
   try {
     const [u, v] = await Promise.all([api('adminListUsers'), api('adminListVideos')]);
-    S.users = u.users; S.videos = v.videos;
+    S.users = u.users; S.videos = v.videos; S.stats = null;
     render();
   } catch (err) { $('#view').innerHTML = '<div class="empty">' + esc(err.message) + '</div>'; }
 }
@@ -203,54 +239,153 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = async () => {
 });
 function render() { ({ overview: vOverview, users: vUsers, videos: vVideos, logs: vLogs })[S.tab](); }
 
+/* ---------- аналитика ---------- */
+const money = v => (Number(v) || 0).toLocaleString('ru-RU');
+const daysLeft = u => u.expires ? Math.round((new Date(u.expires + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5) : null;
+const isExp = u => u.status === 'active' && daysLeft(u) !== null && daysLeft(u) < 0;
+const addMonths = (base, n) => { const d = new Date(base + 'T00:00:00'), day = d.getDate(); d.setMonth(d.getMonth() + n); if (d.getDate() !== day) d.setDate(0); return d.toLocaleDateString('sv-SE'); };
+const badgeU = u => isExp(u) ? '<span class="badge denied">Истёк срок</span>' : badge(u.status);
+const expCell = u => { const l = daysLeft(u); if (l === null) return '<span class="sub">Без срока</span>';
+  const c = l < 0 ? 'var(--red)' : l <= 7 ? 'var(--yellow)' : 'var(--text)';
+  return `<span style="color:${c}">${fmtDate(u.expires)}</span><div class="sub">${l < 0 ? 'истёк' : l === 0 ? 'сегодня последний день' : 'осталось ' + l + ' дн.'}</div>`; };
+const today = () => new Date().toLocaleDateString('sv-SE');
+const nm = v => String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+function findDups(row) {
+  const email = nm($('#fEmail').value), login = nm($('#fLogin').value), name = nm($('#fName').value);
+  return S.users.filter(u => u.row !== row).map(u => {
+    const why = [];
+    if (email && (nm(u.email) === email || nm(u.login) === email)) why.push('почта');
+    if (login && (nm(u.login) === login || nm(u.email) === login)) why.push('логин');
+    if (name.length > 2 && nm(u.name) === name) why.push('имя');
+    return why.length ? { u, why } : null;
+  }).filter(Boolean);
+}
+function checkDup(row) {
+  const box = $('#dup'); if (!box) return;
+  const list = findDups(row);
+  box.innerHTML = list.map(({ u, why }) => {
+    const hard = why.includes('почта') || why.includes('логин');
+    return `<div style="margin-top:12px;padding:12px;border-radius:10px;border:1px solid ${hard ? 'var(--red)' : 'var(--yellow)'};background:${hard ? '#3d0f0f55' : '#3d320055'}">
+      <b style="color:${hard ? 'var(--red)' : 'var(--yellow)'}">${hard ? 'Такой ученик уже есть' : 'Возможно, это уже существующий ученик'}</b>
+      <span class="sub"> · совпадение: ${why.join(', ')}</span>
+      <div style="margin-top:8px"><b>${esc(u.name || '—')}</b> ${badge(u.status)}<div class="sub">${esc(u.email || u.login)}</div>
+      <div style="margin-top:4px">${chips(u.lessons)}</div>
+      <div class="sub" style="margin-top:4px">Сумма: ${u.amount !== '' ? money(u.amount) : '—'} · Добавлен: ${esc(u.added || '—')}</div></div>
+      <button type="button" class="btn ghost sm" style="margin-top:10px" onclick="editUser(${u.row})">Открыть этого ученика</button></div>`;
+  }).join('');
+}
+const METRICS = { views: 'Просмотры', viewers: 'Зрители', logins: 'Входы' };
+const personName = who => { const w = String(who).toLowerCase(); const u = S.users.find(x => x.email.toLowerCase() === w || x.login.toLowerCase() === w); return (u && u.name) || who; };
+function setPeriod(n) { S.days = n; S.stats = null; vOverview(); }
+function setMetric(m) { S.metric = m; vOverview(); }
+async function loadStats(n) {
+  try { S.stats = { n, d: await api('adminStats', { days: n }) }; }
+  catch (e) { S.stats = { n, err: e.message }; }
+  S.loadingN = null;
+  if (S.tab === 'overview' && (S.days || 28) === n) vOverview();
+}
+
+function areaChart(el, pts, dates, label) {
+  const W = 800, H = 260, l = 34, r = 8, t = 12, b = 26, n = pts.length;
+  const top = Math.max(4, Math.ceil(Math.max(...pts) / 4) * 4);
+  const x = i => l + (n > 1 ? i * (W - l - r) / (n - 1) : 0), y = v => t + (H - t - b) * (1 - v / top);
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = top * k / 4; g += `<line x1="${l}" x2="${W - r}" y1="${y(v)}" y2="${y(v)}" stroke="#2c2c3e"/><text x="${l - 6}" y="${y(v) + 4}" text-anchor="end" fill="#8c8ba1" font-size="11">${v}</text>`; }
+  const step = Math.ceil(n / 7);
+  dates.forEach((d, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 7}" text-anchor="middle" fill="#8c8ba1" font-size="11">${d.slice(8)}.${d.slice(5, 7)}</text>`; });
+  const line = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C9A84C" stop-opacity=".35"/><stop offset="1" stop-color="#C9A84C" stop-opacity="0"/></linearGradient></defs>${g}
+    <path d="${line} L${x(n - 1)} ${y(0)} L${x(0)} ${y(0)}Z" fill="url(#ag)"/><path d="${line}" fill="none" stroke="#C9A84C" stroke-width="2.2" stroke-linejoin="round"/>
+    <line id="cl" y1="${t}" y2="${H - b}" stroke="#8c8ba1" stroke-dasharray="3" opacity="0"/><circle id="cd" r="5" fill="#C9A84C" stroke="#1a1a24" stroke-width="2" opacity="0"/></svg><div class="tip hidden"></div>`;
+  const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), cl = el.querySelector('#cl'), cd = el.querySelector('#cd');
+  svg.onmousemove = e => {
+    const rc = svg.getBoundingClientRect(), px = (e.clientX - rc.left) / rc.width * W;
+    const i = Math.max(0, Math.min(n - 1, Math.round((px - l) / (W - l - r) * (n - 1))));
+    cl.setAttribute('x1', x(i)); cl.setAttribute('x2', x(i)); cl.setAttribute('opacity', 1);
+    cd.setAttribute('cx', x(i)); cd.setAttribute('cy', y(pts[i])); cd.setAttribute('opacity', 1);
+    tip.classList.remove('hidden'); tip.style.left = (x(i) / W * rc.width) + 'px'; tip.style.top = (y(pts[i]) / H * rc.height) + 'px';
+    const d = dates[i]; tip.innerHTML = `${d.slice(8)}.${d.slice(5, 7)}.${d.slice(0, 4)}<br><b>${label}: ${pts[i]}</b>`;
+  };
+  svg.onmouseleave = () => { tip.classList.add('hidden'); cl.setAttribute('opacity', 0); cd.setAttribute('opacity', 0); };
+}
+
 function vOverview() {
   const c = s => S.users.filter(u => u.status === s).length;
   const online = S.users.filter(isOnline);
+  const total = S.users.reduce((t, u) => t + (Number(u.amount) || 0), 0);
   const ids = lessonIds();
-  const max = Math.max(1, ...ids.map(id => S.users.filter(u => u.status === 'active' && u.lessons.includes(id)).length));
+  const n = S.days || 28, m = S.metric || 'views';
+  const counts = ids.map(id => S.users.filter(u => u.status === 'active' && u.lessons.includes(id)).length);
+  const max = Math.max(1, ...counts);
+  const st = S.stats && S.stats.n === n ? S.stats : null;
+  if (!st && S.loadingN !== n) { S.loadingN = n; loadStats(n); }
+  const d = st && st.d;
+  const delta = k => { if (!d) return ''; const a = d.totals.cur[k], p = d.totals.prev[k]; if (!p) return a ? '<span class="up">новое</span>' : '';
+    const v = Math.round((a - p) / p * 100); return `<span class="${v >= 0 ? 'up' : 'dn'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(v)}%</span>`; };
+  const lessonViews = d ? d.lessons : {};
+  const mv = Math.max(1, ...ids.map(id => lessonViews[id] || 0));
   $('#view').innerHTML = `
-  <div class="top"><h2>Обзор</h2><button class="btn ghost" onclick="reload()">Обновить</button></div>
+  <div class="top"><h2>Обзор</h2><div class="tools"><button class="btn ghost" onclick="reload()">Обновить</button></div></div>
   <div class="stats">
     <div class="stat gold"><b>${S.users.length}</b><span>Всего учеников</span></div>
     <div class="stat g"><b>${c('active')}</b><span>Активных</span></div>
+    <div class="stat r"><b>${S.users.filter(isExp).length}</b><span>Срок истёк</span></div>
     <div class="stat y"><b>${c('pending')}</b><span>Ждут одобрения</span></div>
     <div class="stat r"><b>${c('denied')}</b><span>Закрыт доступ</span></div>
     <div class="stat"><b><span class="dot"></span>${online.length}</b><span>Смотрят сейчас</span></div>
+    <div class="stat gold"><b>${money(total)}</b><span>Сумма оплат</span></div>
   </div>
-  ${c('pending') ? `<div class="tbl" style="margin-bottom:22px"><table><thead><tr><th>Новые заявки</th><th></th></tr></thead><tbody>
-    ${S.users.filter(u => u.status === 'pending').map(u => `<tr><td>${esc(u.name || u.email || u.login)}<div class="sub">${esc(u.email)}</div></td>
-    <td><div class="acts"><button class="btn sm" onclick="editUser(${u.row})">Открыть доступ</button></div></td></tr>`).join('')}
-  </tbody></table></div>` : ''}
-  <div class="tbl"><table><thead><tr><th>Урок</th><th>Частей</th><th>Учеников с доступом</th><th></th></tr></thead><tbody>
-  ${ids.length ? ids.map(id => { const n = S.users.filter(u => u.status === 'active' && u.lessons.includes(id)).length;
-    return `<tr><td>Урок ${id}</td><td>${S.videos.filter(v => v.lessonId === id).length}</td><td>${n}</td>
-    <td><div class="bar"><i style="width:${n / max * 100}%"></i></div></td></tr>`; }).join('')
-    : '<tr><td colspan="4" class="empty">Уроков пока нет. Добавьте видео на вкладке «Уроки и видео».</td></tr>'}
-  </tbody></table></div>`;
+  ${c('pending') ? `<div class="panel"><h3>Новые заявки</h3>${S.users.filter(u => u.status === 'pending').map(u => `<div class="it" style="display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+    <span>${esc(u.name || u.email || u.login)} <span class="sub">${esc(u.email)}</span></span><button class="btn sm" onclick="editUser(${u.row})">Открыть доступ</button></div>`).join('')}</div>` : ''}
+  ${(() => { const L = S.users.filter(u => u.status === 'active' && daysLeft(u) !== null && daysLeft(u) <= 7).sort((a, b) => daysLeft(a) - daysLeft(b));
+    return L.length ? `<div class="panel"><h3>Заканчивается доступ</h3>${L.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap">
+      <span>${esc(u.name || u.email)} <span class="sub">${daysLeft(u) < 0 ? 'истёк ' + fmtDate(u.expires) : 'осталось ' + daysLeft(u) + ' дн. (до ' + fmtDate(u.expires) + ')'}</span></span>
+      <button class="btn sm" onclick="extend(${u.row},1)">Продлить на 1 мес</button></div>`).join('')}</div>` : ''; })()}
+  <div class="panel"><h3>Доступ по урокам</h3>
+    ${ids.length ? `<div class="cols">${ids.map((id, i) => `<div class="col" title="Урок ${id}: ${counts[i]} учеников, ${S.videos.filter(v => v.lessonId === id).length} частей">
+      <b>${counts[i]}</b><i style="height:${counts[i] / max * 150}px"></i><span>Урок ${id}</span></div>`).join('')}</div>
+    <div class="sub" style="margin-top:10px">Сколько активных учеников имеют доступ к уроку</div>` : '<div class="empty">Уроков пока нет</div>'}
+  </div>
+  <div class="panel">
+    <div class="top" style="margin-bottom:14px"><h3 style="margin:0">Аналитика</h3>
+      <div class="seg">${[7, 28, 90].map(k => `<button class="${k === n ? 'on' : ''}" onclick="setPeriod(${k})">${k} дн.</button>`).join('')}</div></div>
+    <div class="mets">${Object.keys(METRICS).map(k => `<button class="met ${k === m ? 'on' : ''}" onclick="setMetric('${k}')">
+      <span>${METRICS[k]}</span><b>${d ? d.totals.cur[k] : '…'}</b>${delta(k)}</button>`).join('')}</div>
+    <div class="chart" id="chart">${!st ? '<div class="empty">Загрузка аналитики…</div>' : st.err ? `<div class="empty">${esc(st.err)}<br><span class="sub">Проверьте, что в Code.gs добавлена функция adminStats и сделана новая версия деплоя.</span></div>` : ''}</div>
+    <div class="sub" style="margin-top:8px">Просмотр — запуск части урока. Сравнение с предыдущими ${n} дн.</div>
+  </div>
+  ${d ? `<div class="g2">
+    <div class="panel"><h3>Просмотры по урокам</h3><div class="rank">${ids.map(id => `<div class="it"><span>Урок ${id}</span><div class="bar"><i style="width:${(lessonViews[id] || 0) / mv * 100}%"></i></div><b>${lessonViews[id] || 0}</b></div>`).join('') || '<div class="sub">Нет данных</div>'}</div></div>
+    <div class="panel"><h3>Самые активные ученики</h3><div class="rank">${d.top.length ? d.top.map(t => `<div class="it"><span title="${esc(t.who)}">${esc(personName(t.who))}</span><div class="bar"><i style="width:${t.views / d.top[0].views * 100}%"></i></div><b>${t.views}</b></div>`).join('') : '<div class="sub">За этот период просмотров нет</div>'}</div></div>
+  </div>` : ''}`;
+  if (d) { const cur = d.daily.slice(-n); areaChart($('#chart'), cur.map(o => o[m]), cur.map(o => o.date), METRICS[m]); }
 }
 
 function vUsers() {
   const q = S.q.toLowerCase();
-  const list = S.users.filter(u => (S.st === 'all' || u.status === S.st) &&
+  const list = S.users.filter(u => (S.st === 'all' || (S.st === 'expired' ? isExp(u) : u.status === S.st)) && (!S.mg || S.mg === 'all' || u.manager === S.mg) &&
     (!q || [u.name, u.email, u.login, u.comment].join(' ').toLowerCase().includes(q)));
   $('#view').innerHTML = `
   <div class="top"><h2>Ученики</h2><div class="tools">
     <input id="q" placeholder="Поиск по имени или почте" value="${esc(S.q)}">
-    <select id="st"><option value="all">Все статусы</option><option value="active">Активные</option><option value="pending">Ожидают</option><option value="denied">Закрытые</option></select>
+    <select id="st"><option value="all">Все статусы</option><option value="active">Активные</option><option value="pending">Ожидают</option><option value="denied">Закрытые</option><option value="expired">Истёк срок</option></select>
+    <select id="mg"><option value="all">Все менеджеры</option>${MANAGERS.map(m => `<option>${m}</option>`).join('')}</select>
     <button class="btn" onclick="editUser(0)">Добавить ученика</button></div></div>
-  <div class="tbl"><table><thead><tr><th>Ученик</th><th>Статус</th><th>Доступные уроки</th><th>Последний вход</th><th></th></tr></thead><tbody>
+  <div class="tbl"><table><thead><tr><th>Ученик</th><th>Статус</th><th>Доступные уроки</th><th>Менеджер</th><th>Сумма</th><th>Добавлен</th><th>Доступ до</th><th>Последний вход</th><th></th></tr></thead><tbody>
   ${list.length ? list.map(u => `<tr>
     <td>${isOnline(u) ? '<span class="dot" title="Смотрит сейчас"></span>' : ''}<b>${esc(u.name || '—')}</b><div class="sub">${esc(u.email || u.login)}</div>${u.comment ? `<div class="sub">${esc(u.comment)}</div>` : ''}</td>
-    <td>${badge(u.status)}</td><td>${chips(u.lessons)}</td><td class="sub">${esc(u.lastLogin || '—')}</td>
+    <td>${badgeU(u)}</td><td>${chips(u.lessons)}</td><td>${esc(u.manager || '—')}</td><td>${u.amount !== '' ? money(u.amount) : '<span class="sub">—</span>'}</td><td class="sub">${fmtDate(u.added)}</td><td>${expCell(u)}</td><td class="sub">${esc(u.lastLogin || '—')}</td>
     <td><div class="acts">
       ${u.status === 'pending' ? `<button class="btn sm" onclick="quick(${u.row},'active')">Одобрить</button>` : ''}
       ${u.status === 'active' ? `<button class="btn ghost sm" onclick="quick(${u.row},'denied')">Закрыть</button>` : ''}
       ${u.status === 'denied' ? `<button class="btn ghost sm" onclick="quick(${u.row},'active')">Открыть</button>` : ''}
+      ${u.expires ? `<button class="btn ghost sm" onclick="extend(${u.row},1)">+1 мес</button>` : ''}
       <button class="btn ghost sm" onclick="editUser(${u.row})">Изменить</button>
       <button class="btn danger sm" onclick="delUser(${u.row})">Удалить</button></div></td></tr>`).join('')
-    : '<tr><td colspan="5" class="empty">Никого не найдено</td></tr>'}
+    : '<tr><td colspan="9" class="empty">Никого не найдено</td></tr>'}
   </tbody></table></div>`;
-  $('#st').value = S.st;
+  $('#st').value = S.st; $('#mg').value = S.mg || 'all';
+  $('#mg').onchange = e => { S.mg = e.target.value; vUsers(); };
   $('#q').oninput = e => { S.q = e.target.value; const p = e.target.selectionStart; vUsers(); const n = $('#q'); n.focus(); n.setSelectionRange(p, p); };
   $('#st').onchange = e => { S.st = e.target.value; vUsers(); };
 }
@@ -283,16 +418,22 @@ async function run(fn, ok) {
 }
 
 function editUser(row) {
-  const u = S.users.find(x => x.row === row) || { row: 0, status: 'active', lessons: [], name: '', email: '', login: '', comment: '' };
+  const u = S.users.find(x => x.row === row) || { row: 0, status: 'active', lessons: [], name: '', email: '', login: '', comment: '', amount: '', added: today(), manager: '', expires: '' };
   const ids = [...new Set([...lessonIds(), ...u.lessons])].sort((a, b) => a - b);
   openModal(`<form class="card" onsubmit="saveUser(event, ${u.row})">
     <h3>${u.row ? 'Изменить ученика' : 'Новый ученик'}</h3>
-    <label>Имя</label><input id="fName" value="${esc(u.name)}">
-    <label>Google-почта (для входа и доступа к видео)</label><input id="fEmail" type="email" value="${esc(u.email)}">
-    <div class="row2"><div><label>Логин (необязательно)</label><input id="fLogin" value="${esc(u.login)}"></div>
+    <label>Имя</label><input id="fName" value="${esc(u.name)}" oninput="checkDup(${u.row})">
+    <label>Google-почта (для входа и доступа к видео)</label><input id="fEmail" type="email" value="${esc(u.email)}" oninput="checkDup(${u.row})"><div id="dup"></div>
+    <div class="row2"><div><label>Логин (необязательно)</label><input id="fLogin" value="${esc(u.login)}" oninput="checkDup(${u.row})"></div>
     <div><label>Пароль (необязательно)</label><input id="fPass" placeholder="${u.row ? 'не менять' : ''}"></div></div>
     <label>Статус</label><select id="fStatus">
       ${['active', 'pending', 'denied'].map(s => `<option value="${s}" ${u.status === s ? 'selected' : ''}>${stLabel[s]}</option>`).join('')}</select>
+    <div class="row2"><div><label>Сумма оплаты</label><input id="fAmount" type="number" min="0" step="any" value="${esc(u.amount)}" placeholder="0"></div><div><label>Дата добавления</label><input id="fAdded" type="date" value="${esc(u.added)}"></div></div>
+    <label>Менеджер</label><select id="fManager"><option value="">— не выбран —</option>${MANAGERS.map(m => `<option ${u.manager === m ? 'selected' : ''}>${m}</option>`).join('')}</select>
+    <label>Доступ до (после этой даты уроки закроются сами)</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="fExp" type="date" value="${esc(u.expires)}" style="flex:1;min-width:150px;width:auto">
+      ${[1, 3, 6, 12].map(n => `<button type="button" class="btn ghost sm" onclick="setExp(${n})">+${n} мес</button>`).join('')}
+      <button type="button" class="btn ghost sm" onclick="setExp(0)">Без срока</button></div>
     <label>Доступные уроки</label><div class="lessons">
       ${ids.length ? ids.map(id => `<label><input type="checkbox" value="${id}" ${u.lessons.includes(id) ? 'checked' : ''}>Урок ${id}</label>`).join('') : '<span class="sub">Сначала добавьте видео</span>'}</div>
     <label>Комментарий</label><textarea id="fComment" rows="2">${esc(u.comment)}</textarea>
@@ -304,8 +445,19 @@ function saveUser(e, row) {
   const lessons = [...document.querySelectorAll('.lessons input:checked')].map(i => i.value).join(',');
   const email = $('#fEmail').value.trim(), login = $('#fLogin').value.trim();
   if (!email && !login) return toast('Укажите почту или логин');
+  if (findDups(row).some(d => d.why.includes('почта') || d.why.includes('логин'))) { checkDup(row); return toast('Такой ученик уже есть — откройте его из подсказки'); }
   run(() => api('adminSaveUser', { row, name: $('#fName').value.trim(), email, login, pass: $('#fPass').value.trim(),
-    status: $('#fStatus').value, lessons, comment: $('#fComment').value.trim() }), 'Сохранено, доступ на Диске обновлён');
+    status: $('#fStatus').value, lessons, comment: $('#fComment').value.trim(), amount: $('#fAmount').value, added: $('#fAdded').value, manager: $('#fManager').value, expires: $('#fExp').value }), 'Сохранено, доступ на Диске обновлён');
+}
+function setExp(n) {
+  const el = $('#fExp'); if (!n) { el.value = ''; return; }
+  el.value = addMonths(el.value && el.value > today() ? el.value : today(), n);
+}
+function extend(row, n) {
+  const u = S.users.find(x => x.row === row);
+  const base = u.expires && u.expires > today() ? u.expires : today();
+  run(() => api('adminSaveUser', { row, name: u.name, email: u.email, login: u.login, status: u.status,
+    lessons: u.lessons.join(','), comment: u.comment, expires: addMonths(base, n) }), 'Доступ продлён');
 }
 function quick(row, status) {
   const u = S.users.find(x => x.row === row);
@@ -347,6 +499,14 @@ $('#syncBtn').onclick = async () => {
   try { await api('adminSyncAll'); toast('Права на Диске синхронизированы'); } catch (e) { toast('Ошибка: ' + e.message); }
   b.disabled = false; b.textContent = 'Синхронизировать Диск';
 };
+
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2, el = document.createElement('span');
+  el.className = 'ripple';
+  el.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+  b.appendChild(el); setTimeout(() => el.remove(), 600);
+});
 
 /* ---------- старт ---------- */
 $('#lUrl').value = localStorage.getItem('admUrl') || '';
